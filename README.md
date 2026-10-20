@@ -13,12 +13,12 @@ The cause is a math bug in the game's limb IK solver, and this mod fixes that on
 ## Install
 
 1. Make sure you have an ASI loader in `The Sims 3\Game\Bin`, for example [Ultimate ASI Loader](https://github.com/ThirteenAG/Ultimate-ASI-Loader/releases/latest) or the one that comes with [Smooth Patch](https://modthesims.info/d/658759/smooth-patch-2-1.html).
-2. Download the latest zip from [Releases](../../releases) and copy `LimbIkScaleFix.asi` into `The Sims 3\Game\Bin`. The other files are optional:
-   - `LimbIkScaleFix.ini` holds the default settings.
-   - `LimbIkScaleFix.pdb` holds debug symbols. Put it next to the `.asi` if you use a debugger or crash logger, so it can show this mod's function names.
+2. Download the zip from the latest [release](../../releases) and copy `LimbIkScaleFix.asi` into `The Sims 3\Game\Bin`. `LimbIkScaleFix.ini` is optional; it only holds the default settings.
 3. Launch the game and open `LimbIkScaleFix.log` in `Game\Bin`. A line starting with `Patched call at` means the fix is active.
 
 To uninstall, delete `LimbIkScaleFix.asi`. The mod doesn't change any files.
+
+Each release also has `LimbIkScaleFix.pdb`, the debug symbols for that exact build. You only need it with a debugger or crash logger: put it next to the `.asi` and they can show this mod's function names.
 
 The release downloads are built automatically by GitHub from the source code in this repository, so what you download matches the code you can read here.
 
@@ -29,6 +29,8 @@ The release downloads are built automatically by GitHub from the source code in 
 | EA App / Origin 1.69.47 (`TS3.exe`) | Tested in game |
 | Steam 1.67.2 (`TS3W.exe`) | Should work, not yet tested in game. The address was checked against the Steam executable. |
 | Disc 1.67.2 (`TS3W.exe`) | Untested. The fix finds the code by pattern scan. |
+
+Tested on adult, teen and child sims. Toddlers and pets haven't been tested.
 
 It works alongside Sims 3 Settings Setter. If another mod has already hooked the same call, the fix writes that to its log and does nothing.
 
@@ -50,8 +52,9 @@ The fix redirects that one matrix build so it ignores the bone's scale. Sims wit
 
 ## Building
 
-- **Clang with MinGW-w64 (what releases use):** run `./build.sh` to get `dist/LimbIkScaleFix.asi` and `dist/LimbIkScaleFix.pdb`. On Debian or Ubuntu, install the tools with `sudo apt-get install clang lld g++-mingw-w64-i686-win32`.
-- **Visual Studio:** open `LimbIkScaleFix.slnx` and build Release | x86. The output is already named `.asi`. The Visual Studio build hasn't been tested in game yet.
+Open `LimbIkScaleFix.slnx` in Visual Studio 2026 and build **Release | x86**. You get `Release\LimbIkScaleFix.asi` and its debug symbols, `Release\LimbIkScaleFix.pdb`. Releases are built the same way by GitHub Actions.
+
+A `.pdb` only matches the `.asi` from the same build, so use the one from the release if you're debugging the release `.asi`.
 
 The `s3ss-patch` folder has the same fix written as a [Sims 3 Settings Setter](https://github.com/sims3fiend/Sims3SettingsSetter) patch.
 
@@ -67,11 +70,11 @@ This fix was found and built in a conversation with Claude, Anthropic's AI model
 **Me (thesammy58)**
 - Reported the bug, and pointed to Just Harry's finding that turning off RenderLimbIk stops it.
 - Supplied the game files, the slider packages, the S3SS source, and a memory dump of the game while the flicker was happening.
-- Tested the fix in game on the EA App build and decided what to publish.
+- Tested the fix in game on the EA App build, including the Visual Studio build and adult, teen and child sims, and decided what to publish.
 
-**What's verified:** the cause is confirmed in the game's code; in the memory dump, where the slider-scaled hand bones were the only bones with rotations of the wrong length; and by the fix working in game on EA App 1.69.47, including toggling it off and on.
+**What's verified:** the cause is confirmed in the game's code; in the memory dump, where the slider-scaled hand bones were the only bones with rotations of the wrong length; and by the fix working in game on EA App 1.69.47 for adult, teen and child sims, including toggling it off and on.
 
-**What isn't yet:** Steam and disc builds in game, the Visual Studio build, and child, toddler and pet rigs.
+**What isn't yet:** Steam and disc builds in game, and toddler and pet rigs.
 
 Commits written by Claude carry a `Co-Authored-By: Claude` line.
 

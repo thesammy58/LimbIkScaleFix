@@ -12,32 +12,39 @@ permissions:
 
 jobs:
   build:
-    runs-on: ubuntu-24.04
+    runs-on: windows-2025
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Clang, LLD and 32-bit MinGW-w64
-        run: sudo apt-get update && sudo apt-get install -y clang lld g++-mingw-w64-i686-win32
+      - uses: microsoft/setup-msbuild@v2
 
-      - name: Build
-        run: ./build.sh
+      - name: Build Release | x86 with Visual Studio
+        run: msbuild LimbIkScaleFix.slnx -p:Configuration=Release -p:Platform=x86 -m
 
       - name: Package
+        shell: pwsh
         run: |
-          cp README.md LICENSE dist/
-          cd dist
-          zip -9 "LimbIkScaleFix-${GITHUB_REF_NAME//\//-}.zip" LimbIkScaleFix.asi LimbIkScaleFix.pdb LimbIkScaleFix.ini SHA256SUMS.txt README.md LICENSE
+          $zip = "LimbIkScaleFix-$($env:GITHUB_REF_NAME -replace '/', '-').zip"
+          New-Item -ItemType Directory -Force dist | Out-Null
+          Compress-Archive -Path Release\LimbIkScaleFix.asi, LimbIkScaleFix.ini -DestinationPath "dist\$zip"
+          Copy-Item Release\LimbIkScaleFix.pdb dist\
+          Get-FileHash Release\LimbIkScaleFix.asi, Release\LimbIkScaleFix.pdb -Algorithm SHA256 | Format-List Hash, Path
 
       - uses: actions/upload-artifact@v4
         with:
           name: LimbIkScaleFix
-          path: dist/*.zip
+          path: dist/*
 
       - name: Publish release
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
-          files: dist/*.zip
+          files: |
+            dist/*.zip
+            dist/LimbIkScaleFix.pdb
           body: |
-            Built from this tag by GitHub Actions with Clang and 32-bit MinGW-w64 (see `build.sh`).
-            `LimbIkScaleFix.pdb` holds the debug symbols. SHA-256 hashes are in `SHA256SUMS.txt` inside the zip and in the build log.
+            **To install:** download `LimbIkScaleFix-${{ github.ref_name }}.zip` and copy `LimbIkScaleFix.asi` into `The Sims 3\Game\Bin`. The `.ini` is optional. You need an ASI loader; see the [README](https://github.com/${{ github.repository }}#install).
+
+            `LimbIkScaleFix.pdb` is the debug symbols for this exact build. Only grab it if you use a debugger or crash logger.
+
+            Built from this tag by GitHub Actions with Visual Studio (Release | x86). This mod was made with AI (Claude); the README explains who did what.

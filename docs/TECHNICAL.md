@@ -114,6 +114,6 @@ Steam 1.67.2 (image base `0x00400000`). EA App 1.69.47 equivalents found so far:
 
 - **Which frames skip the blend.** The −1 path in the interpolation clock was read from the code, not watched at runtime. The fix doesn't depend on it.
 - **Elbow and knee aim.** Three earlier calls in the solver (`0x0057DD2C`, `0x0057DEF1`, `0x0057DFA5`) also use scaled matrices. With uneven scaling on the upper arm, forearm, thigh or calf (Pcfreak Arm, for example), the bend direction may be slightly off. Those produce unit rotations, so they can't cause size flicker, and the fix leaves them alone.
-- **Other rigs.** The numbers use the adult rig only; child, toddler and pet rigs weren't checked.
+- **Other rigs.** The numbers use the adult rig only. In game, the fix also works on teen and child sims; toddler and pet rigs haven't been checked.
 
 Credit to Just Harry for spotting that turning off RenderLimbIk stops the flicker, which pointed the search at limb IK.
