@@ -1,0 +1,21 @@
+# Build output
+dist/
+Debug/
+Release/
+*.asi
+*.dll
+*.pdb
+*.ilk
+*.obj
+*.exp
+*.lib
+*.iobj
+*.ipdb
+
+# Visual Studio
+.vs/
+*.user
+*.vcxproj.user
+
+# Runtime files
+*.log
