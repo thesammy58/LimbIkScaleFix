@@ -18,8 +18,6 @@ The cause is a math bug in the game's limb IK solver, and this mod fixes that on
 
 To uninstall, delete `LimbIkScaleFix.asi`. The mod doesn't change any files.
 
-Each release also has `LimbIkScaleFix.pdb`, the debug symbols for that exact build. You only need it with a debugger or crash logger: put it next to the `.asi` and they can show this mod's function names.
-
 The release downloads are built automatically by GitHub from the source code in this repository, so what you download matches the code you can read here.
 
 ## Compatibility
@@ -54,7 +52,7 @@ The fix redirects that one matrix build so it ignores the bone's scale. Sims wit
 
 Open `LimbIkScaleFix.slnx` in Visual Studio 2026 and build **Release | x86**. You get `Release\LimbIkScaleFix.asi` and its debug symbols, `Release\LimbIkScaleFix.pdb`. Releases are built the same way by GitHub Actions.
 
-A `.pdb` only matches the `.asi` from the same build, so use the one from the release if you're debugging the release `.asi`.
+Releases don't include a `.pdb`. If you want debug symbols, build it yourself and use your `.asi` together with its `.pdb`: a `.pdb` only matches the `.asi` from the same build.
 
 The `s3ss-patch` folder has the same fix written as a [Sims 3 Settings Setter](https://github.com/sims3fiend/Sims3SettingsSetter) patch.
 

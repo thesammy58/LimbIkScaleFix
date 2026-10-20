@@ -27,24 +27,19 @@ jobs:
           $zip = "LimbIkScaleFix-$($env:GITHUB_REF_NAME -replace '/', '-').zip"
           New-Item -ItemType Directory -Force dist | Out-Null
           Compress-Archive -Path Release\LimbIkScaleFix.asi, LimbIkScaleFix.ini -DestinationPath "dist\$zip"
-          Copy-Item Release\LimbIkScaleFix.pdb dist\
-          Get-FileHash Release\LimbIkScaleFix.asi, Release\LimbIkScaleFix.pdb -Algorithm SHA256 | Format-List Hash, Path
+          Get-FileHash Release\LimbIkScaleFix.asi -Algorithm SHA256 | Format-List Hash, Path
 
       - uses: actions/upload-artifact@v4
         with:
           name: LimbIkScaleFix
-          path: dist/*
+          path: dist/*.zip
 
       - name: Publish release
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
-          files: |
-            dist/*.zip
-            dist/LimbIkScaleFix.pdb
+          files: dist/*.zip
           body: |
             **To install:** download `LimbIkScaleFix-${{ github.ref_name }}.zip` and copy `LimbIkScaleFix.asi` into `The Sims 3\Game\Bin`. The `.ini` is optional. You need an ASI loader; see the [README](https://github.com/${{ github.repository }}#install).
-
-            `LimbIkScaleFix.pdb` is the debug symbols for this exact build. Only grab it if you use a debugger or crash logger.
 
             Built from this tag by GitHub Actions with Visual Studio (Release | x86). This mod was made with AI (Claude); the README explains who did what.
