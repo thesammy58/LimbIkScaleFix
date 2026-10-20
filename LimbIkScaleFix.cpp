@@ -17,9 +17,9 @@
 //  builds it from a copy of the bone's transform with scale (1,1,1) and a
 //  normalised rotation. Nothing else in the game is changed.
 //
-//  Ctrl+Shift+L toggles the fix while the game window is focused (A/B testing).
-//  Log: LimbIkScaleFix.log next to this file. Settings: LimbIkScaleFix.ini next
-//  to this file (optional).
+//  Ctrl+Shift+K toggles the fix while the game window is focused (A/B testing).
+//  Log: LimbIkScaleFix.log next to this file (Logging=0 in the ini turns it
+//  off). Settings: LimbIkScaleFix.ini next to this file (optional).
 // ============================================================================
 
 #define WIN32_LEAN_AND_MEAN
@@ -96,8 +96,10 @@ const DWORD kLogMaxBytes = 256u * 1024u; // the log starts over past this size
 
 wchar_t g_logPath[MAX_PATH];
 wchar_t g_iniPath[MAX_PATH];
+bool g_logEnabled = true; // Logging= in the ini; set once before the first Log call
 
 void Log(const char* fmt, ...) {
+    if (!g_logEnabled) return;
     char line[512];
     SYSTEMTIME st;
     GetLocalTime(&st);
@@ -276,9 +278,13 @@ bool GameWindowFocused() {
     return pid == GetCurrentProcessId();
 }
 
+// Ctrl+Shift+K. (Ctrl+Shift+L is taken by another of thesammy58's mods.)
+const int kToggleKey = 'K';
+
 DWORD WINAPI Worker(LPVOID) {
     const int startEnabled = GetPrivateProfileIntW(L"LimbIkScaleFix", L"Enabled", 1, g_iniPath);
     const int hotkey = GetPrivateProfileIntW(L"LimbIkScaleFix", L"ToggleHotkey", 1, g_iniPath);
+    g_logEnabled = GetPrivateProfileIntW(L"LimbIkScaleFix", L"Logging", 1, g_iniPath) != 0;
     InterlockedExchange(&g_fixEnabled, startEnabled ? 1 : 0);
 
     uint8_t* text = nullptr;
@@ -306,12 +312,12 @@ DWORD WINAPI Worker(LPVOID) {
     if (!InstallAt(callSite)) return 0;
 
     if (!hotkey) return 0;
-    Log("Ctrl+Shift+L toggles the fix while the game window is focused.");
+    Log("Ctrl+Shift+K toggles the fix while the game window is focused.");
     bool wasDown = false;
     for (;;) {
         Sleep(50);
         const bool down =
-            (GetAsyncKeyState(VK_CONTROL) & 0x8000) && (GetAsyncKeyState(VK_SHIFT) & 0x8000) && (GetAsyncKeyState('L') & 0x8000);
+            (GetAsyncKeyState(VK_CONTROL) & 0x8000) && (GetAsyncKeyState(VK_SHIFT) & 0x8000) && (GetAsyncKeyState(kToggleKey) & 0x8000);
         if (down && !wasDown && GameWindowFocused()) {
             const LONG now = InterlockedXor(&g_fixEnabled, 1) ^ 1;
             Log("Fix toggled %s.", now ? "ON" : "OFF");

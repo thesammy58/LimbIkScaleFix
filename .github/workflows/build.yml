@@ -16,8 +16,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install 32-bit MinGW-w64
-        run: sudo apt-get update && sudo apt-get install -y g++-mingw-w64-i686-win32
+      - name: Install Clang, LLD and 32-bit MinGW-w64
+        run: sudo apt-get update && sudo apt-get install -y clang lld g++-mingw-w64-i686-win32
 
       - name: Build
         run: ./build.sh
@@ -26,7 +26,7 @@ jobs:
         run: |
           cp README.md LICENSE dist/
           cd dist
-          zip -9 "LimbIkScaleFix-${GITHUB_REF_NAME//\//-}.zip" LimbIkScaleFix.asi LimbIkScaleFix.ini LimbIkScaleFix.asi.sha256 README.md LICENSE
+          zip -9 "LimbIkScaleFix-${GITHUB_REF_NAME//\//-}.zip" LimbIkScaleFix.asi LimbIkScaleFix.pdb LimbIkScaleFix.ini SHA256SUMS.txt README.md LICENSE
 
       - uses: actions/upload-artifact@v4
         with:
@@ -39,5 +39,5 @@ jobs:
         with:
           files: dist/*.zip
           body: |
-            Built from this tag by GitHub Actions with 32-bit MinGW-w64 (see `build.sh`).
-            SHA-256 of `LimbIkScaleFix.asi` is in `LimbIkScaleFix.asi.sha256` inside the zip and in the build log.
+            Built from this tag by GitHub Actions with Clang and 32-bit MinGW-w64 (see `build.sh`).
+            `LimbIkScaleFix.pdb` holds the debug symbols. SHA-256 hashes are in `SHA256SUMS.txt` inside the zip and in the build log.

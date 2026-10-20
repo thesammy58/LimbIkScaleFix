@@ -13,7 +13,9 @@ The cause is a math bug in the game's limb IK solver, and this mod fixes that on
 ## Install
 
 1. Make sure you have an ASI loader in `The Sims 3\Game\Bin`, for example [Ultimate ASI Loader](https://github.com/ThirteenAG/Ultimate-ASI-Loader/releases/latest) or the one that comes with [Smooth Patch](https://modthesims.info/d/658759/smooth-patch-2-1.html).
-2. Download the latest zip from [Releases](../../releases) and copy `LimbIkScaleFix.asi` into `The Sims 3\Game\Bin`. `LimbIkScaleFix.ini` is optional; it only holds the default settings.
+2. Download the latest zip from [Releases](../../releases) and copy `LimbIkScaleFix.asi` into `The Sims 3\Game\Bin`. The other files are optional:
+   - `LimbIkScaleFix.ini` holds the default settings.
+   - `LimbIkScaleFix.pdb` holds debug symbols. Put it next to the `.asi` if you use a debugger or crash logger, so it can show this mod's function names.
 3. Launch the game and open `LimbIkScaleFix.log` in `Game\Bin`. A line starting with `Patched call at` means the fix is active.
 
 To uninstall, delete `LimbIkScaleFix.asi`. The mod doesn't change any files.
@@ -32,8 +34,8 @@ It works alongside Sims 3 Settings Setter. If another mod has already hooked the
 
 ## Using it
 
-- **Ctrl+Shift+L** turns the fix off and on while the game window is focused. A normal beep means on, an error beep means off. Useful for comparing the same sim with and without it.
-- In `LimbIkScaleFix.ini`, `Enabled=0` starts the game with the fix off, and `ToggleHotkey=0` disables the hotkey.
+- **Ctrl+Shift+K** turns the fix off and on while the game window is focused. A normal beep means on, an error beep means off. Useful for comparing the same sim with and without it.
+- In `LimbIkScaleFix.ini`, `Enabled=0` starts the game with the fix off, `ToggleHotkey=0` disables the hotkey, and `Logging=0` stops it writing `LimbIkScaleFix.log`.
 - The log starts over once it passes 256 KB.
 
 ## How it works
@@ -48,7 +50,7 @@ The fix redirects that one matrix build so it ignores the bone's scale. Sims wit
 
 ## Building
 
-- **MinGW (what releases use):** run `./build.sh` to get `dist/LimbIkScaleFix.asi`. On Debian or Ubuntu, install the compiler with `sudo apt-get install g++-mingw-w64-i686-win32`.
+- **Clang with MinGW-w64 (what releases use):** run `./build.sh` to get `dist/LimbIkScaleFix.asi` and `dist/LimbIkScaleFix.pdb`. On Debian or Ubuntu, install the tools with `sudo apt-get install clang lld g++-mingw-w64-i686-win32`.
 - **Visual Studio:** open `LimbIkScaleFix.slnx` and build Release | x86. The output is already named `.asi`. The Visual Studio build hasn't been tested in game yet.
 
 The `s3ss-patch` folder has the same fix written as a [Sims 3 Settings Setter](https://github.com/sims3fiend/Sims3SettingsSetter) patch.
