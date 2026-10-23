@@ -8,7 +8,7 @@ ASI mod for The Sims 3 that stops sims' hands and feet from flickering between t
 
 With custom sliders that resize hands or feet, such as Sage's Hand Size slider or NikSim's Feet slider, the affected hands or feet flicker rapidly between two sizes. It only happens while the game's limb IK and animation smoothing are both on, which they always are unless you turn them off in [Sims 3 Settings Setter](https://github.com/sims3fiend/Sims3SettingsSetter) (RenderLimbIk and Smooth Animation, under Animation).
 
-The cause is a math bug in the game's limb IK solver, and this mod fixes that one step. [docs/TECHNICAL.md](docs/TECHNICAL.md) explains it in full.
+The cause is a math bug in the game's limb inverse kinematics solver, and this mod fixes that one step. [docs/TECHNICAL.md](docs/TECHNICAL.md) explains it in full.
 
 ## Install
 
@@ -25,8 +25,8 @@ The release downloads are built automatically by GitHub from the source code in 
 | Game version | Status |
 | --- | --- |
 | EA App / Origin 1.69.47 (`TS3.exe`) | Tested in game |
-| Steam 1.67.2 (`TS3W.exe`) | Should work, not yet tested in game. The address was checked against the Steam executable. |
-| Disc 1.67.2 (`TS3W.exe`) | Untested. The fix finds the code by pattern scan. |
+| Steam 1.67.2 (`TS3W.exe`) | Tested in game |
+| Disc 1.67.2 (`TS3W.exe`) | Untested, but expected to work in parity with Steam executable |
 
 Tested on adult, teen and child sims. Toddlers and pets haven't been tested.
 
