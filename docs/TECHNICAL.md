@@ -2,7 +2,7 @@
 
 > Written by Claude, Anthropic's AI model, from its own analysis of the game; see the README's "How this was made". Addresses are from the Steam build (1.67.2) unless marked EA.
 
-Hands and feet on sims with size sliders flicker between two sizes because the limb IK solver reads a scaled bone matrix as if it were a pure rotation, then writes a rotation of the wrong length back into the pose. Smooth Animation's blend repairs that rotation on blended frames only, so blended and unblended frames show different sizes. Redirecting one function call inside the solver fixes it, and the fix is confirmed working in game on the EA App build (1.69.47).
+Hands and feet on sims with size sliders flicker between two sizes because the limb inverse kinematics solver reads a scaled bone matrix as if it were a pure rotation, then writes a rotation of the wrong length back into the pose. Smooth Animation's blend repairs that rotation on blended frames only, so blended and unblended frames show different sizes. Redirecting one function call inside the solver fixes it, and the fix is confirmed working in game on the EA App build (1.69.47).
 
 ![How a scaled hand or foot reaches the screen](how-it-works.png)
 
