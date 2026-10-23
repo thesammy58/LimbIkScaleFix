@@ -72,7 +72,7 @@ This fix was found and built in a conversation with Claude, Anthropic's AI model
 
 **What's verified:** the cause is confirmed in the game's code; in the memory dump, where the slider-scaled hand bones were the only bones with rotations of the wrong length; and by the fix working in game on EA App 1.69.47 for adult, teen and child sims, including toggling it off and on.
 
-**What isn't yet:** Steam and disc builds in game, and toddler and pet rigs.
+**What isn't yet:** Disc builds (Steam version is confirmed working, however), and toddler and pet rigs.
 
 Commits written by Claude carry a `Co-Authored-By: Claude` line.
 
