@@ -97,7 +97,6 @@
     <ClCompile Include="LimbIkScaleFix.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="LimbIkScaleFix.ini" />
     <None Include="README.md" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

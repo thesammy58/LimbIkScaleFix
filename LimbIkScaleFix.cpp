@@ -17,9 +17,9 @@
 //  builds it from a copy of the bone's transform with scale (1,1,1) and a
 //  normalised rotation. Nothing else in the game is changed.
 //
-//  Ctrl+Shift+K toggles the fix while the game window is focused (A/B testing).
-//  Log: LimbIkScaleFix.log next to this file (Logging=0 in the ini turns it
-//  off). Settings: LimbIkScaleFix.ini next to this file (optional).
+//  There are no settings. The mod writes LimbIkScaleFix.log next to itself
+//  only if the fix can't be applied. For test builds, see the two switches
+//  below.
 // ============================================================================
 
 #define WIN32_LEAN_AND_MEAN
@@ -31,9 +31,22 @@
 #include <stdarg.h>
 #include <math.h>
 
-#define LIMBIKSCALEFIX_VERSION "1.1.0"
+#define LIMBIKSCALEFIX_VERSION "1.2.0"
 
 namespace {
+
+// ---------------------------------------------------------------------------
+// Test build switches. Releases have both set to false. Change them here and
+// rebuild to make a build for testing.
+
+// true: log every step to LimbIkScaleFix.log. false: write the log only when
+// the fix can't be applied, together with the lines leading up to it.
+constexpr bool kVerboseLog = false;
+
+// true: Ctrl+Shift+K turns the fix off and on while the game window is
+// focused (normal beep = on, error beep = off), for comparing a sim with and
+// without it.
+constexpr bool kToggleHotkey = false;
 
 // ---------------------------------------------------------------------------
 // Engine types and the replacement function
@@ -90,29 +103,18 @@ void __fastcall BuildRotationOnlyMatrix(const void* transform, void* /*unusedEdx
 }
 
 // ---------------------------------------------------------------------------
-// Logging and settings
+// Logging. Only the worker thread logs, so nothing here needs locking.
 
 const DWORD kLogMaxBytes = 256u * 1024u; // the log starts over past this size
 
 wchar_t g_logPath[MAX_PATH];
-wchar_t g_iniPath[MAX_PATH];
-bool g_logEnabled = true; // Logging= in the ini; set once before the first Log call
 
-void Log(const char* fmt, ...) {
-    if (!g_logEnabled) return;
-    char line[512];
-    SYSTEMTIME st;
-    GetLocalTime(&st);
-    int n = _snprintf(line, sizeof(line), "[%04u-%02u-%02u %02u:%02u:%02u.%03u] ", st.wYear, st.wMonth, st.wDay, st.wHour,
-        st.wMinute, st.wSecond, st.wMilliseconds);
-    if (n < 0) n = 0;
-    va_list ap;
-    va_start(ap, fmt);
-    _vsnprintf(line + n, sizeof(line) - n - 3, fmt, ap);
-    va_end(ap);
-    line[sizeof(line) - 3] = 0;
-    strcat(line, "\r\n");
+// Without kVerboseLog, Log() lines wait here and only reach the file if
+// LogError() is called, so a working install never creates a log.
+char g_pending[2048];
+size_t g_pendingLen = 0;
 
+void AppendToLogFile(const char* text, size_t len) {
     HANDLE h = CreateFileW(g_logPath, FILE_APPEND_DATA, FILE_SHARE_READ, nullptr, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
     if (h == INVALID_HANDLE_VALUE) return;
     LARGE_INTEGER size;
@@ -122,24 +124,64 @@ void Log(const char* fmt, ...) {
         if (h == INVALID_HANDLE_VALUE) return;
     }
     DWORD written;
-    WriteFile(h, line, (DWORD)strlen(line), &written, nullptr);
+    WriteFile(h, text, (DWORD)len, &written, nullptr);
     CloseHandle(h);
 }
 
-void InitPaths(HMODULE self) {
+// Formats one timestamped line ending in CRLF and returns its length.
+size_t FormatLine(char (&line)[512], const char* fmt, va_list ap) {
+    SYSTEMTIME st;
+    GetLocalTime(&st);
+    int n = _snprintf(line, sizeof(line), "[%04u-%02u-%02u %02u:%02u:%02u.%03u] ", st.wYear, st.wMonth, st.wDay, st.wHour,
+        st.wMinute, st.wSecond, st.wMilliseconds);
+    if (n < 0) n = 0;
+    _vsnprintf(line + n, sizeof(line) - n - 3, fmt, ap);
+    line[sizeof(line) - 3] = 0;
+    strcat(line, "\r\n");
+    return strlen(line);
+}
+
+// A step that went fine: written straight away in verbose builds, otherwise
+// kept in case an error follows.
+void Log(const char* fmt, ...) {
+    char line[512];
+    va_list ap;
+    va_start(ap, fmt);
+    const size_t len = FormatLine(line, fmt, ap);
+    va_end(ap);
+    if (kVerboseLog) {
+        AppendToLogFile(line, len);
+    } else if (g_pendingLen + len <= sizeof(g_pending)) {
+        memcpy(g_pending + g_pendingLen, line, len);
+        g_pendingLen += len;
+    }
+}
+
+// The fix can't be applied: always written, after any lines kept by Log().
+void LogError(const char* fmt, ...) {
+    char line[512];
+    va_list ap;
+    va_start(ap, fmt);
+    const size_t len = FormatLine(line, fmt, ap);
+    va_end(ap);
+    if (g_pendingLen) {
+        AppendToLogFile(g_pending, g_pendingLen);
+        g_pendingLen = 0;
+    }
+    AppendToLogFile(line, len);
+}
+
+void InitLogPath(HMODULE self) {
     wchar_t path[MAX_PATH];
     DWORD len = GetModuleFileNameW(self, path, MAX_PATH);
     if (len == 0 || len >= MAX_PATH) {
         lstrcpyW(g_logPath, L"LimbIkScaleFix.log");
-        lstrcpyW(g_iniPath, L".\\LimbIkScaleFix.ini");
         return;
     }
     wchar_t* slash = wcsrchr(path, L'\\');
     if (slash) slash[1] = 0;
     lstrcpyW(g_logPath, path);
     lstrcatW(g_logPath, L"LimbIkScaleFix.log");
-    lstrcpyW(g_iniPath, path);
-    lstrcatW(g_iniPath, L"LimbIkScaleFix.ini");
 }
 
 // The game's executable is TS3.exe (EA App / Origin, patch 1.69) or TS3W.exe
@@ -249,7 +291,7 @@ bool InstallAt(uintptr_t callSite) {
     const uintptr_t target = callSite + 5 + rel;
     if (!IsReadable(reinterpret_cast<void*>(target), sizeof(kHelperPrologue)) ||
         memcmp(reinterpret_cast<void*>(target), kHelperPrologue, sizeof(kHelperPrologue)) != 0) {
-        Log("Call at 0x%08X targets 0x%08X, which is not the expected matrix helper. Another mod may have hooked it; not patching.",
+        LogError("Call at 0x%08X targets 0x%08X, which is not the expected matrix helper. Another mod may have hooked it; not patching.",
             (unsigned)callSite, (unsigned)target);
         return false;
     }
@@ -258,7 +300,7 @@ bool InstallAt(uintptr_t callSite) {
     const int32_t newRel = (int32_t)(reinterpret_cast<uintptr_t>(&BuildRotationOnlyMatrix) - (callSite + 5));
     DWORD oldProtect;
     if (!VirtualProtect(reinterpret_cast<void*>(callSite + 1), 4, PAGE_EXECUTE_READWRITE, &oldProtect)) {
-        Log("VirtualProtect failed (%lu); not patching.", GetLastError());
+        LogError("VirtualProtect failed (%lu); not patching.", GetLastError());
         return false;
     }
     memcpy(reinterpret_cast<void*>(callSite + 1), &newRel, 4);
@@ -278,24 +320,19 @@ bool GameWindowFocused() {
     return pid == GetCurrentProcessId();
 }
 
-// Ctrl+Shift+K. (Ctrl+Shift+L is taken by another of thesammy58's mods.)
+// Ctrl+Shift+K (test builds only). Ctrl+Shift+L is taken by another of
+// thesammy58's mods.
 const int kToggleKey = 'K';
 
 DWORD WINAPI Worker(LPVOID) {
-    const int startEnabled = GetPrivateProfileIntW(L"LimbIkScaleFix", L"Enabled", 1, g_iniPath);
-    const int hotkey = GetPrivateProfileIntW(L"LimbIkScaleFix", L"ToggleHotkey", 1, g_iniPath);
-    g_logEnabled = GetPrivateProfileIntW(L"LimbIkScaleFix", L"Logging", 1, g_iniPath) != 0;
-    InterlockedExchange(&g_fixEnabled, startEnabled ? 1 : 0);
-
     uint8_t* text = nullptr;
     size_t textSize = 0;
     DWORD timestamp = 0;
     if (!GetTextSection(&text, &textSize, &timestamp)) {
-        Log("Could not read the game's headers; not patching.");
+        LogError("LimbIkScaleFix " LIMBIKSCALEFIX_VERSION ": could not read the game's headers; not patching.");
         return 0;
     }
-    Log("LimbIkScaleFix " LIMBIKSCALEFIX_VERSION " loaded. Game build timestamp 0x%08lX. Fix starts %s.", timestamp,
-        startEnabled ? "ON" : "OFF");
+    Log("LimbIkScaleFix " LIMBIKSCALEFIX_VERSION " loaded. Game build timestamp 0x%08lX.", timestamp);
 
     // The EA App build's code is decrypted after launch, so keep looking for up to 3 minutes.
     uintptr_t callSite = 0;
@@ -303,7 +340,7 @@ DWORD WINAPI Worker(LPVOID) {
     const DWORD startTick = GetTickCount();
     while (!(callSite = FindCallSite(text, textSize, timestamp, &how))) {
         if (GetTickCount() - startTick > 180000) {
-            Log("Could not find the limb IK call after 3 minutes; not patching. Unknown or modified game build?");
+            LogError("Could not find the limb IK call after 3 minutes; not patching. Unknown or modified game build?");
             return 0;
         }
         Sleep(250);
@@ -311,8 +348,8 @@ DWORD WINAPI Worker(LPVOID) {
     Log("Found the limb IK end-bone matrix call via %s.", how);
     if (!InstallAt(callSite)) return 0;
 
-    if (!hotkey) return 0;
-    Log("Ctrl+Shift+K toggles the fix while the game window is focused.");
+    if (!kToggleHotkey) return 0;
+    Log("Test build: Ctrl+Shift+K toggles the fix while the game window is focused.");
     bool wasDown = false;
     for (;;) {
         Sleep(50);
@@ -333,7 +370,7 @@ BOOL WINAPI DllMain(HINSTANCE instance, DWORD reason, LPVOID) {
     if (reason == DLL_PROCESS_ATTACH) {
         DisableThreadLibraryCalls(instance);
         if (!IsGameProcess()) return TRUE; // the launcher loads ASIs too; stay idle there
-        InitPaths(instance);
+        InitLogPath(instance);
         HANDLE t = CreateThread(nullptr, 0, Worker, nullptr, 0, nullptr);
         if (t) CloseHandle(t);
     }

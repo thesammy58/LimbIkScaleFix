@@ -13,10 +13,11 @@ The cause is a math bug in the game's limb inverse kinematics solver, and this m
 ## Install
 
 1. Make sure you have an ASI loader in `The Sims 3\Game\Bin`, for example [Ultimate ASI Loader](https://github.com/ThirteenAG/Ultimate-ASI-Loader/releases/latest) or the one that comes with [Smooth Patch](https://modthesims.info/d/658759/smooth-patch-2-1.html).
-2. Download the zip from the latest [release](../../releases) and copy `LimbIkScaleFix.asi` into `The Sims 3\Game\Bin`. `LimbIkScaleFix.ini` is optional; it only holds the default settings.
-3. Launch the game and open `LimbIkScaleFix.log` in `Game\Bin`. A line starting with `Patched call at` means the fix is active.
+2. Download `LimbIkScaleFix.asi` from the latest [release](../../releases) and put it in `The Sims 3\Game\Bin`. That's all; there's nothing to set up.
 
 To uninstall, delete `LimbIkScaleFix.asi`. The mod doesn't change any files.
+
+Upgrading from 1.1.0 or earlier: you can delete the old `LimbIkScaleFix.ini` and `LimbIkScaleFix.log`. They're no longer used.
 
 The release downloads are built automatically by GitHub from the source code in this repository, so what you download matches the code you can read here.
 
@@ -30,13 +31,11 @@ The release downloads are built automatically by GitHub from the source code in 
 
 Tested on adult, teen and child sims. Toddlers and pets haven't been tested.
 
-It works alongside Sims 3 Settings Setter. If another mod has already hooked the same call, the fix writes that to its log and does nothing.
+It works alongside Sims 3 Settings Setter. If another mod has already hooked the same call, the fix leaves it alone.
 
-## Using it
+## If it doesn't work
 
-- **Ctrl+Shift+K** turns the fix off and on while the game window is focused. A normal beep means on, an error beep means off. Useful for comparing the same sim with and without it.
-- In `LimbIkScaleFix.ini`, `Enabled=0` starts the game with the fix off, `ToggleHotkey=0` disables the hotkey, and `Logging=0` stops it writing `LimbIkScaleFix.log`.
-- The log starts over once it passes 256 KB.
+The mod only writes a file when something goes wrong. If the fix can't be applied, for example on a game version it doesn't recognise or when another mod has hooked the same code, `LimbIkScaleFix.log` appears next to the `.asi` and says why. If there's no log, the fix is running. Include the log if you report a problem.
 
 ## How it works
 
@@ -53,6 +52,11 @@ The fix redirects that one matrix build so it ignores the bone's scale. Sims wit
 Open `LimbIkScaleFix.slnx` in Visual Studio 2026 and build **Release | x86**. You get `Release\LimbIkScaleFix.asi` and its debug symbols, `Release\LimbIkScaleFix.pdb`. Releases are built the same way by GitHub Actions.
 
 Releases don't include a `.pdb`. If you want debug symbols, build it yourself and use your `.asi` together with its `.pdb`: a `.pdb` only matches the `.asi` from the same build.
+
+For testing, two switches at the top of `LimbIkScaleFix.cpp` are off in releases:
+
+- `kVerboseLog = true` logs every step, including `Patched call at ...` once the fix is in.
+- `kToggleHotkey = true` adds **Ctrl+Shift+K** to turn the fix off and on while the game window is focused. A normal beep means on, an error beep means off. It's useful for comparing a sim with and without the fix.
 
 The `s3ss-patch` folder has the same fix written as a [Sims 3 Settings Setter](https://github.com/sims3fiend/Sims3SettingsSetter) patch.
 
